@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- 🔑 CUSTOMER DATABASE (Exact Keys - No Spaces) ---
+# --- 🔑 UPDATED CUSTOMER DATABASE ---
 USER_DATABASE = {
-    "memuna123": "Master Admin",
-    "pro2026": "Premium User"
+    "ahmad123": "Ahmad - Master Admin",
+    "pro_user_2026": "Premium Subscriber",
+    "memuna123": "Master Admin"
 }
 
 # --- CONFIGURATION ---
@@ -19,15 +20,16 @@ def check_login():
     
     if not st.session_state["authenticated"]:
         st.title("🛡️ Pro SaaS Login")
-        # Added .strip() to ignore accidental spaces
+        # .strip() handles accidental spaces automatically
         key = st.text_input("Enter License Key", type="password").strip()
+        
         if st.button("Access Dashboard"):
             if key in USER_DATABASE:
                 st.session_state["authenticated"] = True
                 st.session_state["user_info"] = USER_DATABASE[key]
                 st.rerun()
             else:
-                st.error(f"Invalid Key. (You entered: {key})")
+                st.error("Invalid Key. Please check the spelling.")
         return False
     return True
 
@@ -44,46 +46,47 @@ class LeadFinder:
             r = requests.get("https://serpapi.com/search", params=p)
             self.leads = r.json().get("local_results", [])
         except:
-            st.error("Connection error. Check API key.")
+            st.error("Connection Error. Please check your internet or API limits.")
 
 # --- MAIN APP ---
 if check_login():
     st.set_page_config(page_title="AI Lead Gen PRO", layout="wide")
-    st.title(f"🚀 Dashboard: {st.session_state['user_info']}")
+    st.title(f"🚀 Welcome, {st.session_state['user_info']}")
     
     with st.sidebar:
-        st.header("Control Panel")
-        my_name = st.text_input("Your Name", "Expert")
-        if st.button("Logout"):
+        st.header("Settings")
+        my_name = st.text_input("Your Agency Name", "Expert")
+        if st.sidebar.button("Logout"):
             st.session_state["authenticated"] = False
             st.rerun()
 
-    n = st.text_input("Niche (e.g. Lawyers)")
-    l = st.text_input("City (e.g. London)")
+    n = st.text_input("Target Niche (e.g. Dentists)")
+    l = st.text_input("Target City (e.g. New York)")
 
-    if st.button("🔥 Scan for Leads"):
+    if st.button("🔥 Find High-Value Leads"):
         if n and l:
             finder = LeadFinder(l, n)
-            with st.spinner("Searching..."):
+            with st.spinner("Accessing Google Maps database..."):
                 finder.fetch()
                 if finder.leads:
+                    st.success(f"Found {len(finder.leads)} Opportunities")
                     for i, lead in enumerate(finder.leads):
                         name = lead.get("title")
                         site = lead.get("website")
-                        with st.expander(f"PROSPECT: {name}"):
+                        with st.expander(f"Lead: {name}"):
                             cl, cr = st.columns(2)
                             with cl:
-                                st.subheader("AI Pitch")
+                                st.subheader("✉️ AI Pitch")
                                 if not site:
-                                    msg = f"Hi {name}, I noticed you are missing a site. I can build one on Hostinger: {HOSTINGER_AFFILIATE}"
+                                    msg = f"Hi {name} Team, I noticed you're missing a website on Google. I can build you one on Hostinger in 48 hours. Link: {HOSTINGER_AFFILIATE}"
                                 else:
-                                    msg = f"Hi {name}, your site at {site} needs a speed boost on Hostinger: {HOSTINGER_AFFILIATE}"
-                                st.text_area("Copy Pitch:", msg, height=150, key=f"p_{i}")
+                                    msg = f"Hi {name} Team, your site at {site} needs a speed boost. Moving to Hostinger's AI hosting will help. Link: {HOSTINGER_AFFILIATE}"
+                                st.text_area("Ready-to-use Pitch:", msg, height=150, key=f"p_{i}")
                             with cr:
-                                st.subheader("Site Preview")
+                                st.subheader("🌐 Site Preview")
                                 if site:
                                     st.components.v1.iframe(site, height=350)
                                 else:
-                                    st.warning("No site found—HIGH VALUE!")
+                                    st.warning("No site found—The perfect lead for a new website sale!")
         else:
-            st.warning("Enter Niche and City.")
+            st.warning("Please fill in both fields.")
