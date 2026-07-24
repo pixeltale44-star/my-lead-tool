@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- 🔑 CUSTOMER DATABASE ---
+# --- 🔑 CUSTOMER DATABASE (Exact Keys - No Spaces) ---
 USER_DATABASE = {
-    "admin123": "Master Admin",
-    "user_pro_2026": "Premium Subscriber",
+    "memuna123": "Master Admin",
+    "pro2026": "Premium User"
 }
 
 # --- CONFIGURATION ---
@@ -16,16 +16,18 @@ HOSTINGER_AFFILIATE = "https://www.hostinger.com/in?REFERRALCODE=QWKAAMIRHS43"
 def check_login():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
+    
     if not st.session_state["authenticated"]:
         st.title("🛡️ Pro SaaS Login")
-        key = st.text_input("Enter License Key", type="password")
+        # Added .strip() to ignore accidental spaces
+        key = st.text_input("Enter License Key", type="password").strip()
         if st.button("Access Dashboard"):
             if key in USER_DATABASE:
                 st.session_state["authenticated"] = True
                 st.session_state["user_info"] = USER_DATABASE[key]
                 st.rerun()
             else:
-                st.error("Invalid Key.")
+                st.error(f"Invalid Key. (You entered: {key})")
         return False
     return True
 
@@ -42,58 +44,46 @@ class LeadFinder:
             r = requests.get("https://serpapi.com/search", params=p)
             self.leads = r.json().get("local_results", [])
         except:
-            st.error("Search error. Check API connection.")
+            st.error("Connection error. Check API key.")
 
-# --- MAIN INTERFACE ---
+# --- MAIN APP ---
 if check_login():
     st.set_page_config(page_title="AI Lead Gen PRO", layout="wide")
     st.title(f"🚀 Dashboard: {st.session_state['user_info']}")
     
     with st.sidebar:
-        st.header("Settings")
-        my_name = st.text_input("Your Agency Name", "AI Expert")
-        if st.button("Log Out"):
+        st.header("Control Panel")
+        my_name = st.text_input("Your Name", "Expert")
+        if st.button("Logout"):
             st.session_state["authenticated"] = False
             st.rerun()
 
-    # Inputs
-    c1, c2 = st.columns(2)
-    with c1: niche = st.text_input("Niche (e.g. Lawyers)")
-    with c2: location = st.text_input("City (e.g. Miami)")
+    n = st.text_input("Niche (e.g. Lawyers)")
+    l = st.text_input("City (e.g. London)")
 
-    if st.button("🔥 Start Lead Scan"):
-        finder = LeadFinder(location, niche)
-        with st.spinner("Scanning Google Maps..."):
-            finder.fetch()
-            
-            if finder.leads:
-                for i, lead in enumerate(finder.leads):
-                    name = lead.get("title")
-                    site = lead.get("website")
-                    
-                    # THE EXPERT PREVIEW LAYOUT
-                    with st.expander(f"PROSPECT: {name}"):
-                        col_left, col_right = st.columns([1, 1])
-                        
-                        with col_left:
-                            st.subheader("✉️ AI Sales Pitch")
-                            if not site:
-                                msg = f"Hi {name}, I noticed you're missing a website on Google. I can build one on Hostinger today. Link: {HOSTINGER_AFFILIATE}"
-                            else:
-                                msg = f"Hi {name}, your site at {site} needs an AI speed boost. Move to Hostinger here: {HOSTINGER_AFFILIATE}"
-                            st.text_area("Pitch:", msg.replace("Expert", my_name), height=200, key=f"pitch_{i}")
-                            st.info(f"📞 Phone: {lead.get('phone', 'Not listed')}")
-
-                        with col_right:
-                            st.subheader("🌐 Website Preview")
-                            if site:
-                                st.write(f"Analyzing: {site}")
-                                # Try to show the website inside the app
-                                st.components.v1.iframe(site, height=400, scrolling=True)
-                                st.markdown(f"[Open site in new tab]({site})")
-                            else:
-                                st.error("No website found—This is a HIGH VALUE lead!")
-                                st.write(f"Targeting: {name}")
-                                st.write(f"Location: {lead.get('address')}")
-            else:
-                st.info("No leads found. Check your search terms.")
+    if st.button("🔥 Scan for Leads"):
+        if n and l:
+            finder = LeadFinder(l, n)
+            with st.spinner("Searching..."):
+                finder.fetch()
+                if finder.leads:
+                    for i, lead in enumerate(finder.leads):
+                        name = lead.get("title")
+                        site = lead.get("website")
+                        with st.expander(f"PROSPECT: {name}"):
+                            cl, cr = st.columns(2)
+                            with cl:
+                                st.subheader("AI Pitch")
+                                if not site:
+                                    msg = f"Hi {name}, I noticed you are missing a site. I can build one on Hostinger: {HOSTINGER_AFFILIATE}"
+                                else:
+                                    msg = f"Hi {name}, your site at {site} needs a speed boost on Hostinger: {HOSTINGER_AFFILIATE}"
+                                st.text_area("Copy Pitch:", msg, height=150, key=f"p_{i}")
+                            with cr:
+                                st.subheader("Site Preview")
+                                if site:
+                                    st.components.v1.iframe(site, height=350)
+                                else:
+                                    st.warning("No site found—HIGH VALUE!")
+        else:
+            st.warning("Enter Niche and City.")
