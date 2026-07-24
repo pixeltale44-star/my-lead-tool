@@ -2,25 +2,27 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- 🔑 UPDATED CUSTOMER DATABASE ---
+# --- 1. MUST BE FIRST ---
+st.set_page_config(page_title="AI Lead Gen PRO", layout="wide")
+
+# --- 2. DATABASE ---
 USER_DATABASE = {
     "ahmad123": "Ahmad - Master Admin",
     "pro_user_2026": "Premium Subscriber",
     "memuna123": "Master Admin"
 }
 
-# --- CONFIGURATION ---
+# --- 3. CONFIGURATION ---
 REAL_API_KEY = "b940832ef990aa072bc43da75530e0ef4aa2d8a12e53b0103e37b022154872bc"
 HOSTINGER_AFFILIATE = "https://www.hostinger.com/in?REFERRALCODE=QWKAAMIRHS43"
 
-# --- LOGIN SYSTEM ---
+# --- 4. LOGIN SYSTEM ---
 def check_login():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
     
     if not st.session_state["authenticated"]:
         st.title("🛡️ Pro SaaS Login")
-        # .strip() handles accidental spaces automatically
         key = st.text_input("Enter License Key", type="password").strip()
         
         if st.button("Access Dashboard"):
@@ -33,7 +35,7 @@ def check_login():
         return False
     return True
 
-# --- SEARCH ENGINE ---
+# --- 5. SEARCH ENGINE ---
 class LeadFinder:
     def __init__(self, location, niche):
         self.location = location
@@ -46,11 +48,10 @@ class LeadFinder:
             r = requests.get("https://serpapi.com/search", params=p)
             self.leads = r.json().get("local_results", [])
         except:
-            st.error("Connection Error. Please check your internet or API limits.")
+            st.error("Connection Error. Please check API limits.")
 
-# --- MAIN APP ---
+# --- 6. MAIN APP ---
 if check_login():
-    st.set_page_config(page_title="AI Lead Gen PRO", layout="wide")
     st.title(f"🚀 Welcome, {st.session_state['user_info']}")
     
     with st.sidebar:
@@ -60,13 +61,13 @@ if check_login():
             st.session_state["authenticated"] = False
             st.rerun()
 
-    n = st.text_input("Target Niche (e.g. Dentists)")
-    l = st.text_input("Target City (e.g. New York)")
+    n = st.text_input("Niche (e.g. Dentists)")
+    l = st.text_input("City (e.g. New York)")
 
     if st.button("🔥 Find High-Value Leads"):
         if n and l:
             finder = LeadFinder(l, n)
-            with st.spinner("Accessing Google Maps database..."):
+            with st.spinner("Searching Google Maps..."):
                 finder.fetch()
                 if finder.leads:
                     st.success(f"Found {len(finder.leads)} Opportunities")
@@ -81,12 +82,12 @@ if check_login():
                                     msg = f"Hi {name} Team, I noticed you're missing a website on Google. I can build you one on Hostinger in 48 hours. Link: {HOSTINGER_AFFILIATE}"
                                 else:
                                     msg = f"Hi {name} Team, your site at {site} needs a speed boost. Moving to Hostinger's AI hosting will help. Link: {HOSTINGER_AFFILIATE}"
-                                st.text_area("Ready-to-use Pitch:", msg, height=150, key=f"p_{i}")
+                                st.text_area("Ready Pitch:", msg, height=150, key=f"p_{i}")
                             with cr:
-                                st.subheader("🌐 Site Preview")
+                                st.subheader("🌐 Preview")
                                 if site:
                                     st.components.v1.iframe(site, height=350)
                                 else:
-                                    st.warning("No site found—The perfect lead for a new website sale!")
+                                    st.warning("No site found—High Value!")
         else:
             st.warning("Please fill in both fields.")
